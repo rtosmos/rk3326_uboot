@@ -1,0 +1,32 @@
+if ROCKCHIP_PX30
+
+config TARGET_EVB_PX30
+	bool "EVB_PX30"
+	select BOARD_LATE_INIT
+
+config PLATFORM_ODROID_GOADV
+	bool "Support ODROID-GO Advanced Platform"
+	select BOARD_LATE_INIT
+	help
+	   ODROID-GO Advanced configuration
+
+if PLATFORM_ODROID_GOADV
+config TARGET_ODROIDGOA
+	bool "Target ODROID-GO Advanced"
+	help
+	   Support all ODROID-GO Advanced boards
+endif
+
+config SYS_SOC
+	default "rockchip"
+
+config SYS_MALLOC_F_LEN
+	default 0x400
+
+config SPL_SERIAL_SUPPORT
+	default y
+
+source "board/rockchip/evb_px30/Kconfig"
+source "board/rockchip/odroidgoa/Kconfig"
+
+endif

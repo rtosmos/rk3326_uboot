@@ -1,0 +1,49 @@
+language: c
+
+env:
+  global:
+    - TARGET_BOARD=odroidgo2
+    - TRAVIS_SECURE_ENV_VARS=true
+    - ARCH=arm64
+    - CROSS_COMPILE=aarch64-none-elf-
+
+addons:
+  apt:
+    packages:
+
+git:
+  depth: 1
+
+before_install:
+        - if [ `uname -m` = x86_64 ]; then sudo apt-get install lzop build-essential gcc bc libncurses5-dev libc6-i386 lib32stdc++6 zlib1g:i386; fi
+
+install:
+
+before_script:
+  - mkdir -p /opt/toolchains
+  - wget https://releases.linaro.org/components/toolchain/binaries/6.3-2017.05/aarch64-linux-gnu/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu.tar.xz
+  - tar Jxf gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu.tar.xz -C /opt/toolchains/
+  - export PATH=/opt/toolchains/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu/bin/:$PATH
+
+script:
+  - ./make.sh ${TARGET_BOARD}
+
+before_deploy:
+  - export RELEASE_VERSION="${TARGET_BOARD}-${TRAVIS_BUILD_NUMBER}"
+  - tar czf u-boot-${RELEASE_VERSION}.tar.gz sd_fuse/idbloader.img sd_fuse/uboot.img sd_fuse/trust.img sd_fuse/sd_fusing.sh
+  - git config --global user.name ${GIT_USER_NAME}
+  - git config --global user.email ${GIT_USER_EMAIL}
+  - export REMOTE_URL=`git config --get remote.origin.url`
+  - export GIT_TAG="travis/${RELEASE_VERSION}"
+  - git tag ${GIT_TAG} -a -m "Tagged by Travis CI"
+  - git push --quiet https://${PRIVATE_ACCESS_TOKEN}@${REMOTE_URL#$"https://"} ${GIT_TAG}
+
+deploy:
+  provider: releases
+  api_key: ${PRIVATE_ACCESS_TOKEN}
+  file_glob: true
+  file: u-boot-${RELEASE_VERSION}.tar.gz
+  skip_cleanup: true
+  on:
+    tags: false
+    all_branches: true
